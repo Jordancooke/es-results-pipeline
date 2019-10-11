@@ -1,0 +1,318 @@
+---
+resource_types:
+  - name: pull-request
+    type: docker-image
+    source:
+      repository: teliaoss/github-pr-resource
+
+resources:
+  - name: pipeline-repository
+    type: git
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/es-results-pipeline.git
+      branch: master
+
+  - name: repository
+    type: pull-request
+    check_every: 24h
+    webhook_token: ((webhook_token-concourse))
+    icon: github-circle
+    source:
+      repository: ONSdigital/es-concourse-deploy
+      access_token: ((git_access_token))
+
+  - name: aggregation-repository
+    type: pull-request
+    check_every: 24h
+    webhook_token: ((webhook_token-concourse))
+    icon: github-circle
+    source:
+      repository: ONSdigital/es-aggregation-sg
+      access_token: ((git_access_token))
+
+  - name: aggregation-deploy-repository
+    type: git
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/es-aggregation-sg.git
+      branch: testing-results-pipeline
+
+  - name: ingest-repository
+    type: pull-request
+    check_every: 24h
+    webhook_token: ((webhook_token-concourse))
+    icon: github-circle
+    source:
+      repository: ONSdigital/es-ingest-takeon-data
+      access_token: ((git_access_token))
+
+  - name: deploy-repository
+    type: git
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/es-ingest-takeon-data.git
+      branch: master
+
+  - name: Python-base
+    type: docker-image
+    source:
+      repository: python
+      tag: 3.7-slim
+
+  - name: Python-container
+    type: docker-image
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+jobs:
+  - name: installing-dependencies
+    serial: true
+    plan:
+      - get: pipeline-repository
+        trigger: true
+      - get: Python-base
+        params:
+          save: true
+      - put: Python-container
+        params:
+          load_base: Python-base
+          build: pipeline-repository
+
+  - name: linting-&-tests
+    plan:
+
+      - get: repository
+        trigger: true
+        version: every
+
+      - put: repository
+        params:
+          path: repository
+          status: success
+
+      - in_parallel:
+          - task: aws-tests
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    cd repository
+                    PYTHONPATH=$(pwd)/repository pytest
+            on_failure:
+              put: repository
+              params:
+                path: repository
+                status: failure
+                description: Failing tests are present
+
+          - task: flake8
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    flake8 $(pwd)/repository
+            on_failure:
+              put: repository
+              params:
+                path: repository
+                status: failure
+                description: Code standards are not met
+
+  - name: ingest-linting-&-tests
+    plan:
+
+      - get: ingest-repository
+        trigger: true
+        version: every
+
+      - put: ingest-repository
+        params:
+          path: ingest-repository
+          status: success
+
+      - in_parallel:
+          - task: aws-tests
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: ingest-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    cd ingest-repository
+                    PYTHONPATH=$(pwd)/ingest-repository pytest
+            on_failure:
+              put: ingest-repository
+              params:
+                path: ingest-repository
+                status: failure
+                description: Failing tests are present
+
+          - task: flake8
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: ingest-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    flake8 $(pwd)/ingest-repository
+            on_failure:
+              put: ingest-repository
+              params:
+                path: ingest-repository
+                status: failure
+                description: Code standards are not met
+
+  - name: aggregation-linting-&-tests
+    plan:
+
+      - get: aggregation-repository
+        trigger: true
+        version: every
+
+      - put: aggregation-repository
+        params:
+          path: aggregation-repository
+          status: success
+
+      - in_parallel:
+          - task: aws-tests
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: aggregation-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    cd aggregation-repository
+                    PYTHONPATH=$(pwd)/aggregation-repository pytest
+            on_failure:
+              put: aggregation-repository
+              params:
+                path: aggregation-repository
+                status: failure
+                description: Failing tests are present
+
+          - task: flake8
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: aggregation-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    flake8 $(pwd)/aggregation-repository
+            on_failure:
+              put: aggregation-repository
+              params:
+                path: aggregation-repository
+                status: failure
+                description: Code standards are not met
+
+  - name: ingest-results-deploy
+    plan:
+      - get: deploy-repository
+        trigger: true
+      - task: serverless-aws
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              aws_access_key_id: ((ecr-svcaccount.api-key))
+              aws_secret_access_key: ((ecr-svcaccount.api-secret))
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            SLS_DEBUG: 1
+          inputs:
+            - name: deploy-repository
+          run:
+            path: deploy-repository/serverless.sh
+
+  - name: aggregation-deploy
+    plan:
+      - get: aggregation-deploy-repository
+        trigger: true
+      - task: serverless-aws
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              aws_access_key_id: ((ecr-svcaccount.api-key))
+              aws_secret_access_key: ((ecr-svcaccount.api-secret))
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            SLS_DEBUG: 1
+          inputs:
+            - name: aggregation-deploy-repository
+          run:
+            path: aggregation-deploy-repository/serverless.sh
