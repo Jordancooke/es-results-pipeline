@@ -21,6 +21,17 @@ resources:
       aws_access_key_id: ((ecr-svcaccount.api-key))
       aws_secret_access_key: ((ecr-svcaccount.api-secret))
 
+  - name: pipeline-requirements
+    type: pull-request
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      paths:
+        - dev-requirements.txt
+      repository: ONSdigital/es-results-pipeline
+      access_token: ((git_access_token))
+
   - name: pipeline-repository
     type: git
     check_every: 24h
@@ -28,7 +39,6 @@ resources:
     webhook_token: ((webhook_token-concourse))
     source:
       uri: https://github.com/ONSdigital/es-results-pipeline.git
-      branch: master
 
   - name: ingest-repository
     type: pull-request
@@ -189,12 +199,15 @@ groups:
 jobs:
   - name: installing-dependencies
     plan:
-      - get: pipeline-repository
-        trigger: true
+      - in_parrallel:
+        - get: pipeline_requirements
+          trigger: true
 
-      - get: base-python-image
-        params:
-          save: true
+        - get: pipeline-repository
+
+        - get: base-python-image
+          params:
+            save: true
 
       - put: ecr-image-upload
         params:
