@@ -39,7 +39,7 @@ resources:
     webhook_token: ((webhook_token-concourse))
     icon: github-circle
     source:
-      repository: ONSdigital/c
+      repository: ONSdigital/es-ingest-takeon-data
       access_token: ((git_access_token))
 
   - name: ingest-deploy-repository
