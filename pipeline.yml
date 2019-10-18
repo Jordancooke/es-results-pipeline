@@ -30,7 +30,7 @@ resources:
     source:
       paths:
         - dev-requirements.txt
-      repository: ONSdigital/es-results-pipeline
+      repository: ONSdigital/es-ingest-takeon-data
       access_token: ((git_access_token))
 
   - name: ingest-repository
@@ -39,7 +39,7 @@ resources:
     webhook_token: ((webhook_token-concourse))
     icon: github-circle
     source:
-      repository: ONSdigital/es-ingest-takeon-data
+      repository: ONSdigital/c
       access_token: ((git_access_token))
 
   - name: ingest-deploy-repository
@@ -68,7 +68,7 @@ resources:
     source:
       paths:
         - dev-requirements.txt
-      repository: ONSdigital/es-results-pipeline
+      repository: ONSdigital/es-enrichment-sg
       access_token: ((git_access_token))
 
   - name: enrichment-repository
@@ -106,7 +106,7 @@ resources:
     source:
       paths:
         - dev-requirements.txt
-      repository: ONSdigital/es-results-pipeline
+      repository: ONSdigital/es-strata-sg
       access_token: ((git_access_token))
 
   - name: strata-repository
@@ -144,7 +144,7 @@ resources:
     source:
       paths:
         - dev-requirements.txt
-      repository: ONSdigital/es-results-pipeline
+      repository: ONSdigital/es-imputation-sg
       access_token: ((git_access_token))
 
   - name: imputation-repository
@@ -182,7 +182,7 @@ resources:
     source:
       paths:
         - dev-requirements.txt
-      repository: ONSdigital/es-results-pipeline
+      repository: ONSdigital/es-aggregation-sg
       access_token: ((git_access_token))
 
   - name: aggregation-repository
@@ -220,7 +220,7 @@ resources:
     source:
       paths:
         - dev-requirements.txt
-      repository: ONSdigital/es-results-pipeline
+      repository: ONSdigital/es-disclosure-sg
       access_token: ((git_access_token))
 
   - name: disclosure-repository
@@ -300,7 +300,7 @@ groups:
 jobs:
   - name: installing-dependencies-ingest
     plan:
-      - in_parrallel:
+      - in_parallel:
         - get: ingest-requirements
           trigger: true
 
@@ -317,7 +317,7 @@ jobs:
 
   - name: installing-dependencies-enrichment
     plan:
-      - in_parrallel:
+      - in_parallel:
         - get: enrichment-requirements
           trigger: true
 
@@ -334,7 +334,7 @@ jobs:
 
   - name: installing-dependencies-strata
     plan:
-      - in_parrallel:
+      - in_parallel:
         - get: strata-requirements
           trigger: true
 
@@ -351,7 +351,7 @@ jobs:
 
   - name: installing-dependencies-imputation
     plan:
-      - in_parrallel:
+      - in_parallel:
         - get: imputation-requirements
           trigger: true
 
@@ -368,7 +368,7 @@ jobs:
 
   - name: installing-dependencies-aggregation
     plan:
-      - in_parrallel:
+      - in_parallel:
         - get: aggregation-requirements
           trigger: true
 
@@ -385,7 +385,7 @@ jobs:
 
   - name: installing-dependencies-disclosure
     plan:
-      - in_parrallel:
+      - in_parallel:
         - get: disclosure-requirements
           trigger: true
 
