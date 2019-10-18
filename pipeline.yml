@@ -319,7 +319,7 @@ jobs:
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
-                - name: repository
+                - name: enrichment-repository
               run:
                 path: sh
                 args:
