@@ -6,6 +6,21 @@ resource_types:
       repository: teliaoss/github-pr-resource
 
 resources:
+  - name: base-python-image
+    type: docker-image
+    icon: language-python
+    source:
+      repository: python
+      tag: 3.7-slim
+
+  - name: ecr-image-upload
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
   - name: pipeline-repository
     type: git
     check_every: 24h
@@ -15,14 +30,77 @@ resources:
       uri: https://github.com/ONSdigital/es-results-pipeline.git
       branch: master
 
-  - name: repository
+  - name: ingest-repository
     type: pull-request
     check_every: 24h
     webhook_token: ((webhook_token-concourse))
     icon: github-circle
     source:
-      repository: ONSdigital/es-concourse-deploy
+      repository: ONSdigital/es-ingest-takeon-data
       access_token: ((git_access_token))
+
+  - name: ingest-deploy-repository
+    type: git
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/es-ingest-takeon-data.git
+      branch: master
+
+  - name: enrichment-repository
+    type: pull-request
+    check_every: 24h
+    webhook_token: ((webhook_token-concourse))
+    icon: github-circle
+    source:
+      repository: ONSdigital/es-enrichment-sg
+      access_token: ((git_access_token))
+
+  - name: enrichment-deploy-repository
+    type: git
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/es-enrichment-sg.git
+      branch: master
+
+  - name: strata-repository
+    type: pull-request
+    check_every: 24h
+    webhook_token: ((webhook_token-concourse))
+    icon: github-circle
+    source:
+      repository: ONSdigital/es-strata-sg
+      access_token: ((git_access_token))
+
+  - name: strata-deploy-repository
+    type: git
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/es-strata-sg.git
+      branch: master
+
+  - name: imputation-repository
+    type: pull-request
+    check_every: 24h
+    webhook_token: ((webhook_token-concourse))
+    icon: github-circle
+    source:
+      repository: ONSdigital/es-imputation-sg
+      access_token: ((git_access_token))
+
+  - name: imputation-deploy-repository
+    type: git
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/es-imputation-sg.git
+      branch: master
 
   - name: aggregation-repository
     type: pull-request
@@ -40,116 +118,94 @@ resources:
     webhook_token: ((webhook_token-concourse))
     source:
       uri: https://github.com/ONSdigital/es-aggregation-sg.git
-      branch: testing-results-pipeline
+      branch: master
 
-  - name: ingest-repository
+  - name: disclosure-repository
     type: pull-request
     check_every: 24h
     webhook_token: ((webhook_token-concourse))
     icon: github-circle
     source:
-      repository: ONSdigital/es-ingest-takeon-data
+      repository: ONSdigital/es-disclosure-sg
       access_token: ((git_access_token))
 
-  - name: deploy-repository
+  - name: disclosure-deploy-repository
     type: git
     check_every: 24h
     icon: github-circle
     webhook_token: ((webhook_token-concourse))
     source:
-      uri: https://github.com/ONSdigital/es-ingest-takeon-data.git
+      uri: https://github.com/ONSdigital/es-disclosure-sg.git
       branch: master
 
-  - name: Python-base
-    type: docker-image
-    source:
-      repository: python
-      tag: 3.7-slim
+##########################################################################################
+#####                                     Groups                                     #####
+##########################################################################################
 
-  - name: Python-container
-    type: docker-image
-    source:
-      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-      aws_access_key_id: ((ecr-svcaccount.api-key))
-      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+groups:
+- name: All
+  jobs:
+  - installing-dependencies
+  - ingest-quality-checks
+  - enrichment-quality-checks
+  - strata-quality-checks
+  - imputation-quality-checks
+  - aggregation-quality-checks
+  - disclosure-quality-checks
+  - ingest-deploy
+  - enrichment-deploy
+  - strata-deploy
+  - disclosure-deploy
+  - imputation-deploy
+  - aggregation-deploy
+  - disclosure-deploy
 
+- name: Installing-Dependencies
+  jobs:
+  - installing-dependencies
+
+- name: Quality-Checks
+  jobs:
+  - ingest-quality-checks
+  - enrichment-quality-checks
+  - strata-quality-checks
+  - imputation-quality-checks
+  - aggregation-quality-checks
+  - disclosure-quality-checks
+
+- name: Deployment
+  jobs:
+  - ingest-deploy
+  - enrichment-deploy
+  - strata-deploy
+  - disclosure-deploy
+  - imputation-deploy
+  - aggregation-deploy
+  - disclosure-deploy
+
+##########################################################################################
+#####                            Installing Dependencies                             #####
+##########################################################################################
 jobs:
   - name: installing-dependencies
-    serial: true
     plan:
       - get: pipeline-repository
         trigger: true
-      - get: Python-base
+
+      - get: base-python-image
         params:
           save: true
-      - put: Python-container
+
+      - put: ecr-image-upload
         params:
-          load_base: Python-base
+          load_base: base-python-image
           build: pipeline-repository
 
-  - name: linting-&-tests
-    plan:
+##########################################################################################
+#####                               Quality Checks                                   #####
+##########################################################################################
 
-      - get: repository
-        trigger: true
-        version: every
-
-      - put: repository
-        params:
-          path: repository
-          status: success
-
-      - in_parallel:
-          - task: aws-tests
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    cd repository
-                    PYTHONPATH=$(pwd)/repository pytest
-            on_failure:
-              put: repository
-              params:
-                path: repository
-                status: failure
-                description: Failing tests are present
-
-          - task: flake8
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    flake8 $(pwd)/repository
-            on_failure:
-              put: repository
-              params:
-                path: repository
-                status: failure
-                description: Code standards are not met
-
-  - name: ingest-linting-&-tests
+  - name: ingest-quality-checks
     plan:
 
       - get: ingest-repository
@@ -162,7 +218,7 @@ jobs:
           status: success
 
       - in_parallel:
-          - task: aws-tests
+          - task: unit-tests
             config:
               platform: linux
               image_resource:
@@ -179,7 +235,7 @@ jobs:
                   - -exc
                   - |
                     cd ingest-repository
-                    PYTHONPATH=$(pwd)/ingest-repository pytest
+                    PYTHONPATH=$(pwd) pytest
             on_failure:
               put: ingest-repository
               params:
@@ -211,7 +267,209 @@ jobs:
                 status: failure
                 description: Code standards are not met
 
-  - name: aggregation-linting-&-tests
+##########################################################################################
+#####                                 Enrichment                                     #####
+##########################################################################################
+
+  - name: enrichment-quality-checks
+    plan:
+
+      - get: enrichment-repository
+        trigger: true
+        version: every
+
+      - put: enrichment-repository
+        params:
+          path: enrichment-repository
+          status: success
+
+      - in_parallel:
+          - task: unit-tests
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: enrichment-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    cd enrichment-repository
+                    PYTHONPATH=$(pwd) pytest
+            on_failure:
+              put: enrichment-repository
+              params:
+                path: enrichment-repository
+                status: failure
+                description: Failing tests are present
+
+          - task: flake8
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: enrichment-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    flake8 $(pwd)/enrichment-repository
+            on_failure:
+              put: enrichment-repository
+              params:
+                path: enrichment-repository
+                status: failure
+                description: Code standards are not met
+
+##########################################################################################
+#####                                    Strata                                      #####
+##########################################################################################
+
+  - name: strata-quality-checks
+    plan:
+
+      - get: strata-repository
+        trigger: true
+        version: every
+
+      - put: strata-repository
+        params:
+          path: strata-repository
+          status: success
+
+      - in_parallel:
+          - task: aws-tests
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: strata-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    cd strata-repository
+                    PYTHONPATH=$(pwd) pytest
+            on_failure:
+              put: strata-repository
+              params:
+                path: strata-repository
+                status: failure
+                description: Failing tests are present
+
+          - task: flake8
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: strata-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    flake8 $(pwd)/strata-repository
+            on_failure:
+              put: strata-repository
+              params:
+                path: strata-repository
+                status: failure
+                description: Code standards are not met
+
+##########################################################################################
+#####                                 Imputation                                     #####
+##########################################################################################
+
+  - name: imputation-quality-checks
+    plan:
+
+      - get: imputation-repository
+        trigger: true
+        version: every
+
+      - put: imputation-repository
+        params:
+          path: imputation-repository
+          status: success
+
+      - in_parallel:
+          - task: aws-tests
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: imputation-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    cd imputation-repository
+                    PYTHONPATH=$(pwd) pytest
+            on_failure:
+              put: imputation-repository
+              params:
+                path: imputation-repository
+                status: failure
+                description: Failing tests are present
+
+          - task: flake8
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: imputation-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    flake8 $(pwd)/imputation-repository
+            on_failure:
+              put: imputation-repository
+              params:
+                path: imputation-repository
+                status: failure
+                description: Code standards are not met
+
+##########################################################################################
+#####                                 Aggregation                                    #####
+##########################################################################################
+
+  - name: aggregation-quality-checks
     plan:
 
       - get: aggregation-repository
@@ -224,7 +482,7 @@ jobs:
           status: success
 
       - in_parallel:
-          - task: aws-tests
+          - task: unit-tests
             config:
               platform: linux
               image_resource:
@@ -241,7 +499,7 @@ jobs:
                   - -exc
                   - |
                     cd aggregation-repository
-                    PYTHONPATH=$(pwd)/aggregation-repository pytest
+                    PYTHONPATH=$(pwd) pytest
             on_failure:
               put: aggregation-repository
               params:
@@ -273,11 +531,107 @@ jobs:
                 status: failure
                 description: Code standards are not met
 
-  - name: ingest-results-deploy
+##########################################################################################
+#####                                 Disclosure                                     #####
+##########################################################################################
+
+  - name: disclosure-quality-checks
     plan:
-      - get: deploy-repository
+
+      - get: disclosure-repository
         trigger: true
-      - task: serverless-aws
+        version: every
+
+      - put: disclosure-repository
+        params:
+          path: disclosure-repository
+          status: success
+
+      - in_parallel:
+          - task: aws-tests
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: disclosure-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    cd disclosure-repository
+                    PYTHONPATH=$(pwd) pytest
+            on_failure:
+              put: disclosure-repository
+              params:
+                path: disclosure-repository
+                status: failure
+                description: Failing tests are present
+
+          - task: flake8
+            config:
+              platform: linux
+              image_resource:
+                type: docker-image
+                source:
+                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  aws_access_key_id: ((ecr-svcaccount.api-key))
+                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
+              inputs:
+                - name: disclosure-repository
+              run:
+                path: sh
+                args:
+                  - -exc
+                  - |
+                    flake8 $(pwd)/disclosure-repository
+            on_failure:
+              put: disclosure-repository
+              params:
+                path: disclosure-repository
+                status: failure
+                description: Code standards are not met
+
+##########################################################################################
+#####                                 Deployment                                     #####
+##########################################################################################
+
+  - name: ingest-deploy
+    plan:
+      - get: ingest-deploy-repository
+        trigger: true
+
+      - task: obtaining-vpc-details
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: mesosphere/aws-cli
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            AWS_DEFAULT_REGION: eu-west-2
+            SLS_DEBUG: 1
+            TERM: xterm
+          inputs:
+            - name: ingest-deploy-repository
+          run:
+            path: sh
+            args:
+              - -ec
+              - |
+                aws ec2 describe-subnets --filters Name=tag:Name,Values=results-tf-sub-private-\* --subnet-ids --output json > json_outputs/subnets_output.json
+                aws ec2 describe-security-groups --filters Name=tag:Name,Values=results-tf-sg-private --output json > json_outputs/security_groups_output.json
+          outputs:
+            - name: json_outputs
+
+      - task: serverless-deploy
         config:
           platform: linux
           image_resource:
@@ -291,15 +645,204 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
             SLS_DEBUG: 1
           inputs:
-            - name: deploy-repository
+            - name: ingest-deploy-repository
+            - name: json_outputs
           run:
-            path: deploy-repository/serverless.sh
+            path: ingest-deploy-repository/serverless.sh
+
+##########################################################################################
+#####                                 Enrichment                                     #####
+##########################################################################################
+
+  - name: enrichment-deploy
+    plan:
+      - get: enrichment-deploy-repository
+        trigger: true
+
+      - task: obtaining-vpc-details
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: mesosphere/aws-cli
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            AWS_DEFAULT_REGION: eu-west-2
+            SLS_DEBUG: 1
+            TERM: xterm
+          inputs:
+            - name: enrichment-deploy-repository
+          run:
+            path: sh
+            args:
+              - -ec
+              - |
+                aws ec2 describe-subnets --filters Name=tag:Name,Values=results-tf-sub-private-\* --subnet-ids --output json > json_outputs/subnets_output.json
+                aws ec2 describe-security-groups --filters Name=tag:Name,Values=results-tf-sg-private --output json > json_outputs/security_groups_output.json
+          outputs:
+            - name: json_outputs
+
+      - task: serverless-deploy
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              aws_access_key_id: ((ecr-svcaccount.api-key))
+              aws_secret_access_key: ((ecr-svcaccount.api-secret))
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            SLS_DEBUG: 1
+          inputs:
+            - name: enrichment-deploy-repository
+            - name: json_outputs
+          run:
+            path: enrichment-deploy-repository/serverless.sh
+
+##########################################################################################
+#####                                    Strata                                      #####
+##########################################################################################
+  - name: strata-deploy
+    plan:
+      - get: strata-deploy-repository
+        trigger: true
+
+      - task: obtaining-vpc-details
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: mesosphere/aws-cli
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            AWS_DEFAULT_REGION: eu-west-2
+            SLS_DEBUG: 1
+            TERM: xterm
+          inputs:
+            - name: strata-deploy-repository
+          run:
+            path: sh
+            args:
+              - -ec
+              - |
+                aws ec2 describe-subnets --filters Name=tag:Name,Values=results-tf-sub-private-\* --subnet-ids --output json > json_outputs/subnets_output.json
+                aws ec2 describe-security-groups --filters Name=tag:Name,Values=results-tf-sg-private --output json > json_outputs/security_groups_output.json
+          outputs:
+            - name: json_outputs
+
+      - task: serverless-deploy
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              aws_access_key_id: ((ecr-svcaccount.api-key))
+              aws_secret_access_key: ((ecr-svcaccount.api-secret))
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            SLS_DEBUG: 1
+          inputs:
+            - name: strata-deploy-repository
+            - name: json_outputs
+          run:
+            path: strata-deploy-repository/serverless.sh
+
+##########################################################################################
+#####                                 Imputation                                     #####
+##########################################################################################
+
+  - name: imputation-deploy
+    plan:
+      - get: imputation-deploy-repository
+        trigger: true
+
+      - task: obtaining-vpc-details
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: mesosphere/aws-cli
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            AWS_DEFAULT_REGION: eu-west-2
+            SLS_DEBUG: 1
+            TERM: xterm
+          inputs:
+            - name: imputation-deploy-repository
+          run:
+            path: sh
+            args:
+              - -ec
+              - |
+                aws ec2 describe-subnets --filters Name=tag:Name,Values=results-tf-sub-private-\* --subnet-ids --output json > json_outputs/subnets_output.json
+                aws ec2 describe-security-groups --filters Name=tag:Name,Values=results-tf-sg-private --output json > json_outputs/security_groups_output.json
+          outputs:
+            - name: json_outputs
+
+      - task: serverless-deploy
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              aws_access_key_id: ((ecr-svcaccount.api-key))
+              aws_secret_access_key: ((ecr-svcaccount.api-secret))
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            SLS_DEBUG: 1
+          inputs:
+            - name: imputation-deploy-repository
+            - name: json_outputs
+          run:
+            path: imputation-deploy-repository/serverless.sh
+
+##########################################################################################
+#####                                 Aggregation                                    #####
+##########################################################################################
 
   - name: aggregation-deploy
     plan:
       - get: aggregation-deploy-repository
         trigger: true
-      - task: serverless-aws
+
+      - task: obtaining-vpc-details
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: mesosphere/aws-cli
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            AWS_DEFAULT_REGION: eu-west-2
+            SLS_DEBUG: 1
+            TERM: xterm
+          inputs:
+            - name: aggregation-deploy-repository
+          run:
+            path: sh
+            args:
+              - -ec
+              - |
+                aws ec2 describe-subnets --filters Name=tag:Name,Values=results-tf-sub-private-\* --subnet-ids --output json > json_outputs/subnets_output.json
+                aws ec2 describe-security-groups --filters Name=tag:Name,Values=results-tf-sg-private --output json > json_outputs/security_groups_output.json
+          outputs:
+            - name: json_outputs
+
+      - task: serverless-deploy
         config:
           platform: linux
           image_resource:
@@ -314,5 +857,59 @@ jobs:
             SLS_DEBUG: 1
           inputs:
             - name: aggregation-deploy-repository
+            - name: json_outputs
           run:
             path: aggregation-deploy-repository/serverless.sh
+
+##########################################################################################
+#####                                 Disclosure                                     #####
+##########################################################################################
+
+  - name: disclosure-deploy
+    plan:
+      - get: disclosure-deploy-repository
+        trigger: true
+
+      - task: obtaining-vpc-details
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: mesosphere/aws-cli
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            AWS_DEFAULT_REGION: eu-west-2
+            SLS_DEBUG: 1
+            TERM: xterm
+          inputs:
+            - name: disclosure-deploy-repository
+          run:
+            path: sh
+            args:
+              - -ec
+              - |
+                aws ec2 describe-subnets --filters Name=tag:Name,Values=results-tf-sub-private-\* --subnet-ids --output json > json_outputs/subnets_output.json
+                aws ec2 describe-security-groups --filters Name=tag:Name,Values=results-tf-sg-private --output json > json_outputs/security_groups_output.json
+          outputs:
+            - name: json_outputs
+
+      - task: serverless-deploy
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              aws_access_key_id: ((ecr-svcaccount.api-key))
+              aws_secret_access_key: ((ecr-svcaccount.api-secret))
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            SLS_DEBUG: 1
+          inputs:
+            - name: disclosure-deploy-repository
+            - name: json_outputs
+          run:
+            path: disclosure-deploy-repository/serverless.sh
