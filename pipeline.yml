@@ -314,6 +314,11 @@ jobs:
         params:
           load_base: base-python-image
           build: ingest-repository
+          save: true
+          cache: true
+          cache_tag: ingest   #Note, there needs to be the image in place before this will work.
+        get_params:
+          skip_download: true
 
   - name: installing-dependencies-enrichment
     plan:
@@ -331,6 +336,11 @@ jobs:
         params:
           load_base: base-python-image
           build: enrichment-repository
+          save: true
+          cache: true
+          cache_tag: enrichment   #Note, there needs to be the image in place before this will work.
+        get_params:
+          skip_download: true
 
   - name: installing-dependencies-strata
     plan:
@@ -348,6 +358,11 @@ jobs:
         params:
           load_base: base-python-image
           build: strata-repository
+          save: true
+          cache: true
+          cache_tag: strata   #Note, there needs to be the image in place before this will work.
+        get_params:
+          skip_download: true
 
   - name: installing-dependencies-imputation
     plan:
@@ -365,6 +380,11 @@ jobs:
         params:
           load_base: base-python-image
           build: imputation-repository
+          save: true
+          cache: true
+          cache_tag: imputation   #Note, there needs to be the image in place before this will work.
+        get_params:
+          skip_download: true
 
   - name: installing-dependencies-aggregation
     plan:
@@ -382,6 +402,11 @@ jobs:
         params:
           load_base: base-python-image
           build: aggregation-repository
+          save: true
+          cache: true
+          cache_tag: aggregation   #Note, there needs to be the image in place before this will work.
+        get_params:
+          skip_download: true
 
   - name: installing-dependencies-disclosure
     plan:
@@ -399,6 +424,11 @@ jobs:
         params:
           load_base: base-python-image
           build: disclosure-repository
+          save: true
+          cache: true
+          cache_tag: disclosure   #Note, there needs to be the image in place before this will work.
+        get_params:
+          skip_download: true
 
 ##########################################################################################
 #####                               Quality Checks                                   #####
@@ -415,6 +445,8 @@ jobs:
         params:
           path: ingest-repository
           status: success
+        get_params:
+          skip_download: true
 
       - in_parallel:
           - task: unit-tests
@@ -467,6 +499,12 @@ jobs:
                 path: ingest-repository
                 status: failure
                 description: Code standards are not met
+          on_failure:
+            put: ingest-repository
+            params:
+              path: ingest-repository
+              status: failure
+              description: Both linting and tests failed
 
 ##########################################################################################
 #####                                 Enrichment                                     #####
@@ -535,6 +573,12 @@ jobs:
                 path: enrichment-repository
                 status: failure
                 description: Code standards are not met
+          on_failure:
+            put: enrichment-repository
+            params:
+              path: enrichment-repository
+              status: failure
+              description: Both linting and tests failed
 
 ##########################################################################################
 #####                                    Strata                                      #####
@@ -603,6 +647,12 @@ jobs:
                 path: strata-repository
                 status: failure
                 description: Code standards are not met
+          on_failure:
+            put: strata-repository
+            params:
+              path: strata-repository
+              status: failure
+              description: Both linting and tests have failed.
 
 ##########################################################################################
 #####                                 Imputation                                     #####
@@ -671,6 +721,12 @@ jobs:
                 path: imputation-repository
                 status: failure
                 description: Code standards are not met
+          on_failure:
+            put: imputation-repository
+            params:
+              path: imputation-repository
+              status: failure
+              description: Both linting and tests have failed.
 
 ##########################################################################################
 #####                                 Aggregation                                    #####
@@ -739,6 +795,12 @@ jobs:
                 path: aggregation-repository
                 status: failure
                 description: Code standards are not met
+          on_failure:
+            put: aggregation-repository
+            params:
+              path: aggregation-repository
+              status: failure
+              description: Both linting and tests have failed
 
 ##########################################################################################
 #####                                 Disclosure                                     #####
@@ -807,6 +869,12 @@ jobs:
                 path: disclosure-repository
                 status: failure
                 description: Code standards are not met
+          on_failure:
+            put: disclosure-repository
+            params:
+              path: disclosure-repository
+              status: failure
+              description: Linting and tests have failed.
 
 ##########################################################################################
 #####                                 Deployment                                     #####
