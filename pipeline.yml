@@ -13,22 +13,25 @@ resources:
       repository: python
       tag: 3.7-slim
 
-  - name: ecr-image-upload
+  - name: ecr-image-ingest
     type: docker-image
     icon: docker
     source:
       repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: ingest
       aws_access_key_id: ((ecr-svcaccount.api-key))
       aws_secret_access_key: ((ecr-svcaccount.api-secret))
 
-  - name: pipeline-repository
-    type: git
+  - name: ingest-requirements
+    type: pull-request
     check_every: 24h
     icon: github-circle
     webhook_token: ((webhook_token-concourse))
     source:
-      uri: https://github.com/ONSdigital/es-results-pipeline.git
-      branch: master
+      paths:
+        - dev-requirements.txt
+      repository: ONSdigital/es-ingest-takeon-data
+      access_token: ((git_access_token))
 
   - name: ingest-repository
     type: pull-request
@@ -48,6 +51,26 @@ resources:
       uri: https://github.com/ONSdigital/es-ingest-takeon-data.git
       branch: master
 
+  - name: ecr-image-enrichment
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: enrichment
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: enrichment-requirements
+    type: pull-request
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      paths:
+        - dev-requirements.txt
+      repository: ONSdigital/es-enrichment-sg
+      access_token: ((git_access_token))
+
   - name: enrichment-repository
     type: pull-request
     check_every: 24h
@@ -65,6 +88,26 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-enrichment-sg.git
       branch: master
+
+  - name: ecr-image-strata
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: strata
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: strata-requirements
+    type: pull-request
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      paths:
+        - dev-requirements.txt
+      repository: ONSdigital/es-strata-sg
+      access_token: ((git_access_token))
 
   - name: strata-repository
     type: pull-request
@@ -84,6 +127,26 @@ resources:
       uri: https://github.com/ONSdigital/es-strata-sg.git
       branch: master
 
+  - name: ecr-image-imputation
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: imputation
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: imputation-requirements
+    type: pull-request
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      paths:
+        - dev-requirements.txt
+      repository: ONSdigital/es-imputation-sg
+      access_token: ((git_access_token))
+
   - name: imputation-repository
     type: pull-request
     check_every: 24h
@@ -102,6 +165,26 @@ resources:
       uri: https://github.com/ONSdigital/es-imputation-sg.git
       branch: master
 
+  - name: ecr-image-aggregation
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: aggregation
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: aggregation-requirements
+    type: pull-request
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      paths:
+        - dev-requirements.txt
+      repository: ONSdigital/es-aggregation-sg
+      access_token: ((git_access_token))
+
   - name: aggregation-repository
     type: pull-request
     check_every: 24h
@@ -119,6 +202,26 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-aggregation-sg.git
       branch: master
+
+  - name: ecr-image-disclosure
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: disclosure
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: disclosure-requirements
+    type: pull-request
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      paths:
+        - dev-requirements.txt
+      repository: ONSdigital/es-disclosure-sg
+      access_token: ((git_access_token))
 
   - name: disclosure-repository
     type: pull-request
@@ -145,7 +248,12 @@ resources:
 groups:
 - name: All
   jobs:
-  - installing-dependencies
+  - installing-dependencies-ingest
+  - installing-dependencies-enrichment
+  - installing-dependencies-strata
+  - installing-dependencies-imputation
+  - installing-dependencies-aggregation
+  - installing-dependencies-disclosure
   - ingest-quality-checks
   - enrichment-quality-checks
   - strata-quality-checks
@@ -155,14 +263,18 @@ groups:
   - ingest-deploy
   - enrichment-deploy
   - strata-deploy
-  - disclosure-deploy
   - imputation-deploy
   - aggregation-deploy
   - disclosure-deploy
 
 - name: Installing-Dependencies
   jobs:
-  - installing-dependencies
+  - installing-dependencies-ingest
+  - installing-dependencies-enrichment
+  - installing-dependencies-strata
+  - installing-dependencies-imputation
+  - installing-dependencies-aggregation
+  - installing-dependencies-disclosure
 
 - name: Quality-Checks
   jobs:
@@ -178,7 +290,6 @@ groups:
   - ingest-deploy
   - enrichment-deploy
   - strata-deploy
-  - disclosure-deploy
   - imputation-deploy
   - aggregation-deploy
   - disclosure-deploy
@@ -187,19 +298,107 @@ groups:
 #####                            Installing Dependencies                             #####
 ##########################################################################################
 jobs:
-  - name: installing-dependencies
+  - name: installing-dependencies-ingest
     plan:
-      - get: pipeline-repository
-        trigger: true
+      - in_parallel:
+        - get: ingest-requirements
+          trigger: true
 
-      - get: base-python-image
-        params:
-          save: true
+        - get: ingest-repository
 
-      - put: ecr-image-upload
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-ingest
         params:
           load_base: base-python-image
-          build: pipeline-repository
+          build: ingest-repository
+
+  - name: installing-dependencies-enrichment
+    plan:
+      - in_parallel:
+        - get: enrichment-requirements
+          trigger: true
+
+        - get: enrichment-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-enrichment
+        params:
+          load_base: base-python-image
+          build: enrichment-repository
+
+  - name: installing-dependencies-strata
+    plan:
+      - in_parallel:
+        - get: strata-requirements
+          trigger: true
+
+        - get: strata-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-strata
+        params:
+          load_base: base-python-image
+          build: strata-repository
+
+  - name: installing-dependencies-imputation
+    plan:
+      - in_parallel:
+        - get: imputation-requirements
+          trigger: true
+
+        - get: imputation-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-imputation
+        params:
+          load_base: base-python-image
+          build: imputation-repository
+
+  - name: installing-dependencies-aggregation
+    plan:
+      - in_parallel:
+        - get: aggregation-requirements
+          trigger: true
+
+        - get: aggregation-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-aggregation
+        params:
+          load_base: base-python-image
+          build: aggregation-repository
+
+  - name: installing-dependencies-disclosure
+    plan:
+      - in_parallel:
+        - get: disclosure-requirements
+          trigger: true
+
+        - get: disclosure-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-disclosure
+        params:
+          load_base: base-python-image
+          build: disclosure-repository
 
 ##########################################################################################
 #####                               Quality Checks                                   #####
@@ -225,6 +424,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: ingest
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -250,6 +450,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: ingest
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -291,6 +492,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: enrichment
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -316,6 +518,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: enrichment
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -357,6 +560,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: strata
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -382,6 +586,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: strata
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -423,6 +628,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: imputation
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -448,6 +654,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: imputation
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -489,6 +696,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: aggregation
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -514,6 +722,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: aggregation
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -555,6 +764,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: disclosure
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -580,6 +790,7 @@ jobs:
                 type: docker-image
                 source:
                   repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                  tag: disclosure
                   aws_access_key_id: ((ecr-svcaccount.api-key))
                   aws_secret_access_key: ((ecr-svcaccount.api-secret))
               inputs:
@@ -638,6 +849,7 @@ jobs:
             type: docker-image
             source:
               repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              tag: ingest
               aws_access_key_id: ((ecr-svcaccount.api-key))
               aws_secret_access_key: ((ecr-svcaccount.api-secret))
           params:
@@ -691,6 +903,7 @@ jobs:
             type: docker-image
             source:
               repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              tag: enrichment
               aws_access_key_id: ((ecr-svcaccount.api-key))
               aws_secret_access_key: ((ecr-svcaccount.api-secret))
           params:
@@ -743,6 +956,7 @@ jobs:
             type: docker-image
             source:
               repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              tag: strata
               aws_access_key_id: ((ecr-svcaccount.api-key))
               aws_secret_access_key: ((ecr-svcaccount.api-secret))
           params:
@@ -796,6 +1010,7 @@ jobs:
             type: docker-image
             source:
               repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              tag: imputation
               aws_access_key_id: ((ecr-svcaccount.api-key))
               aws_secret_access_key: ((ecr-svcaccount.api-secret))
           params:
@@ -849,6 +1064,7 @@ jobs:
             type: docker-image
             source:
               repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              tag: aggregation
               aws_access_key_id: ((ecr-svcaccount.api-key))
               aws_secret_access_key: ((ecr-svcaccount.api-secret))
           params:
@@ -902,6 +1118,7 @@ jobs:
             type: docker-image
             source:
               repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              tag: disclosure
               aws_access_key_id: ((ecr-svcaccount.api-key))
               aws_secret_access_key: ((ecr-svcaccount.api-secret))
           params:
