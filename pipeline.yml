@@ -299,6 +299,7 @@ groups:
 ##########################################################################################
 jobs:
   - name: installing-dependencies-ingest
+    serial_groups: [rebuild-ingest]
     plan:
       - in_parallel:
         - get: ingest-requirements
@@ -321,6 +322,7 @@ jobs:
           skip_download: true
 
   - name: installing-dependencies-enrichment
+    serial_groups: [rebuild-enrichment]
     plan:
       - in_parallel:
         - get: enrichment-requirements
@@ -343,6 +345,7 @@ jobs:
           skip_download: true
 
   - name: installing-dependencies-strata
+    serial_groups: [rebuild-strata]
     plan:
       - in_parallel:
         - get: strata-requirements
@@ -365,6 +368,7 @@ jobs:
           skip_download: true
 
   - name: installing-dependencies-imputation
+    serial_groups: [rebuild-imputation]
     plan:
       - in_parallel:
         - get: imputation-requirements
@@ -387,6 +391,7 @@ jobs:
           skip_download: true
 
   - name: installing-dependencies-aggregation
+    serial_groups: [rebuild-aggregation]
     plan:
       - in_parallel:
         - get: aggregation-requirements
@@ -409,6 +414,7 @@ jobs:
           skip_download: true
 
   - name: installing-dependencies-disclosure
+    serial_groups: [rebuild-disclosure]
     plan:
       - in_parallel:
         - get: disclosure-requirements
@@ -435,6 +441,7 @@ jobs:
 ##########################################################################################
 
   - name: ingest-quality-checks
+    serial_groups: [rebuild-ingest]
     plan:
 
       - get: ingest-repository
@@ -445,8 +452,6 @@ jobs:
         params:
           path: ingest-repository
           status: success
-        get_params:
-          skip_download: true
 
       - in_parallel:
         - task: unit-tests
@@ -511,6 +516,7 @@ jobs:
 ##########################################################################################
 
   - name: enrichment-quality-checks
+    serial_groups: [rebuild-enrichment]
     plan:
 
       - get: enrichment-repository
@@ -585,6 +591,7 @@ jobs:
 ##########################################################################################
 
   - name: strata-quality-checks
+    serial_groups: [rebuild-strata]
     plan:
 
       - get: strata-repository
@@ -659,6 +666,7 @@ jobs:
 ##########################################################################################
 
   - name: imputation-quality-checks
+    serial_groups: [rebuild-imputation]
     plan:
 
       - get: imputation-repository
@@ -733,6 +741,7 @@ jobs:
 ##########################################################################################
 
   - name: aggregation-quality-checks
+    serial_groups: [rebuild-aggregation]
     plan:
 
       - get: aggregation-repository
@@ -807,6 +816,7 @@ jobs:
 ##########################################################################################
 
   - name: disclosure-quality-checks
+    serial_groups: [rebuild-disclosure]
     plan:
 
       - get: disclosure-repository
