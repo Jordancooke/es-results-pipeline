@@ -449,57 +449,57 @@ jobs:
           skip_download: true
 
       - in_parallel:
-          - task: unit-tests
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: ingest
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: ingest-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    cd ingest-repository
-                    PYTHONPATH=$(pwd) pytest
-            on_failure:
-              put: ingest-repository
-              params:
-                path: ingest-repository
-                status: failure
-                description: Failing tests are present
-
-          - task: flake8
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: ingest
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: ingest-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    flake8 $(pwd)/ingest-repository
-            on_failure:
-              put: ingest-repository
-              params:
-                path: ingest-repository
-                status: failure
-                description: Code standards are not met
+        - task: unit-tests
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: ingest
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: ingest-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  cd ingest-repository
+                  PYTHONPATH=$(pwd) pytest
           on_failure:
+            put: ingest-repository
+            params:
+              path: ingest-repository
+              status: failure
+              description: Failing tests are present
+
+        - task: flake8
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: ingest
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: ingest-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  flake8 $(pwd)/ingest-repository
+          on_failure:
+            put: ingest-repository
+            params:
+              path: ingest-repository
+              status: failure
+              description: Code standards are not met
+        on_failure:
             put: ingest-repository
             params:
               path: ingest-repository
@@ -523,62 +523,62 @@ jobs:
           status: success
 
       - in_parallel:
-          - task: unit-tests
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: enrichment
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: enrichment-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    cd enrichment-repository
-                    PYTHONPATH=$(pwd) pytest
-            on_failure:
-              put: enrichment-repository
-              params:
-                path: enrichment-repository
-                status: failure
-                description: Failing tests are present
-
-          - task: flake8
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: enrichment
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: enrichment-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    flake8 $(pwd)/enrichment-repository
-            on_failure:
-              put: enrichment-repository
-              params:
-                path: enrichment-repository
-                status: failure
-                description: Code standards are not met
+        - task: unit-tests
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: enrichment
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: enrichment-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  cd enrichment-repository
+                  PYTHONPATH=$(pwd) pytest
           on_failure:
             put: enrichment-repository
             params:
               path: enrichment-repository
               status: failure
-              description: Both linting and tests failed
+              description: Failing tests are present
+
+        - task: flake8
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: enrichment
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: enrichment-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  flake8 $(pwd)/enrichment-repository
+          on_failure:
+            put: enrichment-repository
+            params:
+              path: enrichment-repository
+              status: failure
+              description: Code standards are not met
+        on_failure:
+          put: enrichment-repository
+          params:
+            path: enrichment-repository
+            status: failure
+            description: Both linting and tests failed
 
 ##########################################################################################
 #####                                    Strata                                      #####
@@ -597,62 +597,62 @@ jobs:
           status: success
 
       - in_parallel:
-          - task: aws-tests
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: strata
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: strata-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    cd strata-repository
-                    PYTHONPATH=$(pwd) pytest
-            on_failure:
-              put: strata-repository
-              params:
-                path: strata-repository
-                status: failure
-                description: Failing tests are present
-
-          - task: flake8
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: strata
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: strata-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    flake8 $(pwd)/strata-repository
-            on_failure:
-              put: strata-repository
-              params:
-                path: strata-repository
-                status: failure
-                description: Code standards are not met
+        - task: aws-tests
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: strata
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: strata-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  cd strata-repository
+                  PYTHONPATH=$(pwd) pytest
           on_failure:
             put: strata-repository
             params:
               path: strata-repository
               status: failure
-              description: Both linting and tests have failed.
+              description: Failing tests are present
+
+        - task: flake8
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: strata
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: strata-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  flake8 $(pwd)/strata-repository
+          on_failure:
+            put: strata-repository
+            params:
+              path: strata-repository
+              status: failure
+              description: Code standards are not met
+        on_failure:
+          put: strata-repository
+          params:
+            path: strata-repository
+            status: failure
+            description: Both linting and tests have failed.
 
 ##########################################################################################
 #####                                 Imputation                                     #####
@@ -671,62 +671,62 @@ jobs:
           status: success
 
       - in_parallel:
-          - task: aws-tests
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: imputation
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: imputation-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    cd imputation-repository
-                    PYTHONPATH=$(pwd) pytest
-            on_failure:
-              put: imputation-repository
-              params:
-                path: imputation-repository
-                status: failure
-                description: Failing tests are present
-
-          - task: flake8
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: imputation
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: imputation-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    flake8 $(pwd)/imputation-repository
-            on_failure:
-              put: imputation-repository
-              params:
-                path: imputation-repository
-                status: failure
-                description: Code standards are not met
+        - task: aws-tests
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: imputation
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: imputation-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  cd imputation-repository
+                  PYTHONPATH=$(pwd) pytest
           on_failure:
             put: imputation-repository
             params:
               path: imputation-repository
               status: failure
-              description: Both linting and tests have failed.
+              description: Failing tests are present
+
+        - task: flake8
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: imputation
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: imputation-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  flake8 $(pwd)/imputation-repository
+          on_failure:
+            put: imputation-repository
+            params:
+              path: imputation-repository
+              status: failure
+              description: Code standards are not met
+        on_failure:
+          put: imputation-repository
+          params:
+            path: imputation-repository
+            status: failure
+            description: Both linting and tests have failed.
 
 ##########################################################################################
 #####                                 Aggregation                                    #####
@@ -745,62 +745,62 @@ jobs:
           status: success
 
       - in_parallel:
-          - task: unit-tests
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: aggregation
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: aggregation-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    cd aggregation-repository
-                    PYTHONPATH=$(pwd) pytest
-            on_failure:
-              put: aggregation-repository
-              params:
-                path: aggregation-repository
-                status: failure
-                description: Failing tests are present
-
-          - task: flake8
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: aggregation
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: aggregation-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    flake8 $(pwd)/aggregation-repository
-            on_failure:
-              put: aggregation-repository
-              params:
-                path: aggregation-repository
-                status: failure
-                description: Code standards are not met
+        - task: unit-tests
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: aggregation
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: aggregation-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  cd aggregation-repository
+                  PYTHONPATH=$(pwd) pytest
           on_failure:
             put: aggregation-repository
             params:
               path: aggregation-repository
               status: failure
-              description: Both linting and tests have failed
+              description: Failing tests are present
+
+        - task: flake8
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: aggregation
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: aggregation-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  flake8 $(pwd)/aggregation-repository
+          on_failure:
+            put: aggregation-repository
+            params:
+              path: aggregation-repository
+              status: failure
+              description: Code standards are not met
+        on_failure:
+          put: aggregation-repository
+          params:
+            path: aggregation-repository
+            status: failure
+            description: Both linting and tests have failed
 
 ##########################################################################################
 #####                                 Disclosure                                     #####
@@ -819,62 +819,62 @@ jobs:
           status: success
 
       - in_parallel:
-          - task: aws-tests
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: disclosure
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: disclosure-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    cd disclosure-repository
-                    PYTHONPATH=$(pwd) pytest
-            on_failure:
-              put: disclosure-repository
-              params:
-                path: disclosure-repository
-                status: failure
-                description: Failing tests are present
-
-          - task: flake8
-            config:
-              platform: linux
-              image_resource:
-                type: docker-image
-                source:
-                  repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                  tag: disclosure
-                  aws_access_key_id: ((ecr-svcaccount.api-key))
-                  aws_secret_access_key: ((ecr-svcaccount.api-secret))
-              inputs:
-                - name: disclosure-repository
-              run:
-                path: sh
-                args:
-                  - -exc
-                  - |
-                    flake8 $(pwd)/disclosure-repository
-            on_failure:
-              put: disclosure-repository
-              params:
-                path: disclosure-repository
-                status: failure
-                description: Code standards are not met
+        - task: aws-tests
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: disclosure
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: disclosure-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  cd disclosure-repository
+                  PYTHONPATH=$(pwd) pytest
           on_failure:
             put: disclosure-repository
             params:
               path: disclosure-repository
               status: failure
-              description: Linting and tests have failed.
+              description: Failing tests are present
+
+        - task: flake8
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: disclosure
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: disclosure-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  flake8 $(pwd)/disclosure-repository
+          on_failure:
+            put: disclosure-repository
+            params:
+              path: disclosure-repository
+              status: failure
+              description: Code standards are not met
+        on_failure:
+          put: disclosure-repository
+          params:
+            path: disclosure-repository
+            status: failure
+            description: Linting and tests have failed.
 
 ##########################################################################################
 #####                                 Deployment                                     #####
