@@ -12,7 +12,9 @@ resources:
     source:
       repository: python
       tag: 3.7-slim
-
+##########################################################################################
+#####                                   Ingest                                       #####
+##########################################################################################
   - name: ecr-image-ingest
     type: docker-image
     icon: docker
@@ -50,7 +52,9 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-ingest-takeon-data.git
       branch: master
-
+##########################################################################################
+#####                                  Enrichment                                    #####
+##########################################################################################
   - name: ecr-image-enrichment
     type: docker-image
     icon: docker
@@ -88,7 +92,9 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-enrichment-sg.git
       branch: master
-
+##########################################################################################
+#####                                    Strata                                      #####
+##########################################################################################
   - name: ecr-image-strata
     type: docker-image
     icon: docker
@@ -126,7 +132,9 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-strata-sg.git
       branch: master
-
+##########################################################################################
+#####                                  Imputation                                    #####
+##########################################################################################
   - name: ecr-image-imputation
     type: docker-image
     icon: docker
@@ -164,7 +172,9 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-imputation-sg.git
       branch: master
-
+##########################################################################################
+#####                                  Aggregation                                   #####
+##########################################################################################
   - name: ecr-image-aggregation
     type: docker-image
     icon: docker
@@ -202,7 +212,9 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-aggregation-sg.git
       branch: master
-
+##########################################################################################
+#####                                  Disclosure                                    #####
+##########################################################################################
   - name: ecr-image-disclosure
     type: docker-image
     icon: docker
@@ -297,6 +309,8 @@ groups:
 ##########################################################################################
 #####                            Installing Dependencies                             #####
 ##########################################################################################
+#####                                    Ingest                                      #####
+##########################################################################################
 jobs:
   - name: installing-dependencies-ingest
     serial_groups: [rebuild-ingest]
@@ -320,7 +334,9 @@ jobs:
           cache_tag: ingest   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
-
+##########################################################################################
+#####                                  Enrichment                                    #####
+##########################################################################################
   - name: installing-dependencies-enrichment
     serial_groups: [rebuild-enrichment]
     plan:
@@ -343,7 +359,9 @@ jobs:
           cache_tag: enrichment   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
-
+##########################################################################################
+#####                                    Strata                                      #####
+##########################################################################################
   - name: installing-dependencies-strata
     serial_groups: [rebuild-strata]
     plan:
@@ -366,7 +384,9 @@ jobs:
           cache_tag: strata   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
-
+##########################################################################################
+#####                                  Imputation                                    #####
+##########################################################################################
   - name: installing-dependencies-imputation
     serial_groups: [rebuild-imputation]
     plan:
@@ -389,7 +409,9 @@ jobs:
           cache_tag: imputation   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
-
+##########################################################################################
+#####                                 Aggregation                                    #####
+##########################################################################################
   - name: installing-dependencies-aggregation
     serial_groups: [rebuild-aggregation]
     plan:
@@ -412,7 +434,9 @@ jobs:
           cache_tag: aggregation   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
-
+##########################################################################################
+#####                                  Disclosure                                    #####
+##########################################################################################
   - name: installing-dependencies-disclosure
     serial_groups: [rebuild-disclosure]
     plan:
@@ -439,11 +463,12 @@ jobs:
 ##########################################################################################
 #####                               Quality Checks                                   #####
 ##########################################################################################
+#####                                   Ingest                                       #####
+##########################################################################################
 
   - name: ingest-quality-checks
     serial_groups: [rebuild-ingest]
     plan:
-
       - get: ingest-repository
         trigger: true
         version: every
@@ -452,6 +477,39 @@ jobs:
         params:
           path: ingest-repository
           status: success
+
+      - try:
+          task: image-check
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: ingest
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  pwd
+          on_error:
+            do:
+              - in_parallel:
+                  - get: ingest-deploy-repository
+
+                  - get: base-python-image
+                    params:
+                      save: true
+
+              - put: ecr-image-ingest
+                params:
+                  load_base: base-python-image
+                  build: ingest-deploy-repository
+                get_params:
+                  skip_download: true
 
       - in_parallel:
         - task: unit-tests
@@ -528,6 +586,39 @@ jobs:
           path: enrichment-repository
           status: success
 
+      - try:
+          task: image-check
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: enrichment
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  pwd
+          on_error:
+            do:
+              - in_parallel:
+                  - get: enrichment-deploy-repository
+
+                  - get: base-python-image
+                    params:
+                      save: true
+
+              - put: ecr-image-enrichment
+                params:
+                  load_base: base-python-image
+                  build: enrichment-deploy-repository
+                get_params:
+                  skip_download: true
+
       - in_parallel:
         - task: unit-tests
           config:
@@ -602,6 +693,39 @@ jobs:
         params:
           path: strata-repository
           status: success
+
+      - try:
+          task: image-check
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: strata
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  pwd
+          on_error:
+            do:
+              - in_parallel:
+                  - get: strata-deploy-repository
+
+                  - get: base-python-image
+                    params:
+                      save: true
+
+              - put: ecr-image-strata
+                params:
+                  load_base: base-python-image
+                  build: strata-deploy-repository
+                get_params:
+                  skip_download: true
 
       - in_parallel:
         - task: aws-tests
@@ -678,6 +802,39 @@ jobs:
           path: imputation-repository
           status: success
 
+      - try:
+          task: image-check
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: imputation
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  pwd
+          on_error:
+            do:
+              - in_parallel:
+                  - get: imputation-deploy-repository
+
+                  - get: base-python-image
+                    params:
+                      save: true
+
+              - put: ecr-image-imputation
+                params:
+                  load_base: base-python-image
+                  build: imputation-deploy-repository
+                get_params:
+                  skip_download: true
+
       - in_parallel:
         - task: aws-tests
           config:
@@ -752,6 +909,39 @@ jobs:
         params:
           path: aggregation-repository
           status: success
+
+      - try:
+          task: image-check
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: aggregation
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  pwd
+          on_error:
+            do:
+              - in_parallel:
+                  - get: aggregation-deploy-repository
+
+                  - get: base-python-image
+                    params:
+                      save: true
+
+              - put: ecr-image-aggregation
+                params:
+                  load_base: base-python-image
+                  build: aggregation-deploy-repository
+                get_params:
+                  skip_download: true
 
       - in_parallel:
         - task: unit-tests
@@ -828,6 +1018,39 @@ jobs:
           path: disclosure-repository
           status: success
 
+      - try:
+          task: image-check
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: disclosure
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  pwd
+          on_error:
+            do:
+              - in_parallel:
+                  - get: disclosure-deploy-repository
+
+                  - get: base-python-image
+                    params:
+                      save: true
+
+              - put: ecr-image-disclosure
+                params:
+                  load_base: base-python-image
+                  build: disclosure-deploy-repository
+                get_params:
+                  skip_download: true
+
       - in_parallel:
         - task: aws-tests
           config:
@@ -888,6 +1111,8 @@ jobs:
 
 ##########################################################################################
 #####                                 Deployment                                     #####
+##########################################################################################
+#####                                   Ingest                                       #####
 ##########################################################################################
 
   - name: ingest-deploy
