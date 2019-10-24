@@ -1,0 +1,203 @@
+resources:
+  - name: base-python-image
+    type: docker-image
+    icon: language-python
+    source:
+      repository: python
+      tag: 3.7-slim
+
+### ECR bits
+  - name: ecr-image-ingest
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: ingest
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: ecr-image-enrichment
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: enrichment
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: ecr-image-strata
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: strata
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: ecr-image-imputation
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: imputation
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: ecr-image-aggregation
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: aggregation
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+
+  - name: ecr-image-disclosure
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: disclosure
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+
+### Code Repos
+
+  - name: ingest-repository
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/ONSdigital/es-ingest-takeon-data.git
+      branch: master
+
+  - name: enrichment-repository
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/ONSdigital/es-enrichment-sg.git
+      branch: master
+
+  - name: strata-repository
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/ONSdigital/es-strata-sg.git
+      branch: master
+
+  - name: imputation-repository
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/ONSdigital/es-imputation-sg.git
+      branch: master
+
+  - name: aggregation-repository
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/ONSdigital/es-aggregation-sg.git
+      branch: master
+
+  - name: disclosure-repository
+    type: git
+    icon: github-circle
+    source:
+      uri: https://github.com/ONSdigital/es-disclosure-sg.git
+      branch: master
+
+jobs:
+  - name: installing-dependencies-ingest
+    plan:
+      - in_parallel:
+        - get: ingest-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-ingest
+        params:
+          load_base: base-python-image
+          build: ingest-repository
+
+
+  - name: installing-dependencies-enrichment
+    plan:
+      - in_parallel:
+
+        - get: enrichment-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-enrichment
+        params:
+          load_base: base-python-image
+          build: enrichment-repository
+
+
+  - name: installing-dependencies-strata
+    plan:
+      - in_parallel:
+
+        - get: strata-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-strata
+        params:
+          load_base: base-python-image
+          build: strata-repository
+
+
+  - name: installing-dependencies-imputation
+    plan:
+      - in_parallel:
+
+        - get: imputation-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-imputation
+        params:
+          load_base: base-python-image
+          build: imputation-repository
+
+
+  - name: installing-dependencies-aggregation
+    plan:
+      - in_parallel:
+
+        - get: aggregation-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-aggregation
+        params:
+          load_base: base-python-image
+          build: aggregation-repository
+
+
+  - name: installing-dependencies-disclosure
+    plan:
+      - in_parallel:
+
+        - get: disclosure-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-disclosure
+        params:
+          load_base: base-python-image
+          build: disclosure-repository
