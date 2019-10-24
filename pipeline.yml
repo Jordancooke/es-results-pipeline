@@ -12,9 +12,11 @@ resources:
     source:
       repository: python
       tag: 3.7-slim
+
 ##########################################################################################
 #####                                   Ingest                                       #####
 ##########################################################################################
+
   - name: ecr-image-ingest
     type: docker-image
     icon: docker
@@ -52,9 +54,11 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-ingest-takeon-data.git
       branch: master
+
 ##########################################################################################
 #####                                  Enrichment                                    #####
 ##########################################################################################
+
   - name: ecr-image-enrichment
     type: docker-image
     icon: docker
@@ -92,9 +96,11 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-enrichment-sg.git
       branch: master
+
 ##########################################################################################
 #####                                    Strata                                      #####
 ##########################################################################################
+
   - name: ecr-image-strata
     type: docker-image
     icon: docker
@@ -132,9 +138,11 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-strata-sg.git
       branch: master
+
 ##########################################################################################
 #####                                  Imputation                                    #####
 ##########################################################################################
+
   - name: ecr-image-imputation
     type: docker-image
     icon: docker
@@ -172,9 +180,11 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-imputation-sg.git
       branch: master
+
 ##########################################################################################
 #####                                  Aggregation                                   #####
 ##########################################################################################
+
   - name: ecr-image-aggregation
     type: docker-image
     icon: docker
@@ -212,9 +222,11 @@ resources:
     source:
       uri: https://github.com/ONSdigital/es-aggregation-sg.git
       branch: master
+
 ##########################################################################################
 #####                                  Disclosure                                    #####
 ##########################################################################################
+
   - name: ecr-image-disclosure
     type: docker-image
     icon: docker
@@ -311,6 +323,7 @@ groups:
 ##########################################################################################
 #####                                    Ingest                                      #####
 ##########################################################################################
+
 jobs:
   - name: installing-dependencies-ingest
     serial_groups: [rebuild-ingest]
@@ -334,9 +347,11 @@ jobs:
           cache_tag: ingest   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
+
 ##########################################################################################
 #####                                  Enrichment                                    #####
 ##########################################################################################
+
   - name: installing-dependencies-enrichment
     serial_groups: [rebuild-enrichment]
     plan:
@@ -359,9 +374,11 @@ jobs:
           cache_tag: enrichment   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
+
 ##########################################################################################
 #####                                    Strata                                      #####
 ##########################################################################################
+
   - name: installing-dependencies-strata
     serial_groups: [rebuild-strata]
     plan:
@@ -384,9 +401,11 @@ jobs:
           cache_tag: strata   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
+
 ##########################################################################################
 #####                                  Imputation                                    #####
 ##########################################################################################
+
   - name: installing-dependencies-imputation
     serial_groups: [rebuild-imputation]
     plan:
@@ -409,9 +428,11 @@ jobs:
           cache_tag: imputation   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
+
 ##########################################################################################
 #####                                 Aggregation                                    #####
 ##########################################################################################
+
   - name: installing-dependencies-aggregation
     serial_groups: [rebuild-aggregation]
     plan:
@@ -434,9 +455,11 @@ jobs:
           cache_tag: aggregation   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
+
 ##########################################################################################
 #####                                  Disclosure                                    #####
 ##########################################################################################
+
   - name: installing-dependencies-disclosure
     serial_groups: [rebuild-disclosure]
     plan:
@@ -1222,6 +1245,7 @@ jobs:
 ##########################################################################################
 #####                                    Strata                                      #####
 ##########################################################################################
+
   - name: strata-deploy
     plan:
       - get: strata-deploy-repository
