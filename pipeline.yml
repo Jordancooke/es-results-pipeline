@@ -13,6 +13,13 @@ resources:
       repository: python
       tag: 3.7-slim
 
+  - name: bmi-step-functions
+    type: git
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/es-bmi-step-functions.git
+
 ##########################################################################################
 #####                                   Ingest                                       #####
 ##########################################################################################
@@ -290,6 +297,7 @@ groups:
   - imputation-deploy
   - aggregation-deploy
   - disclosure-deploy
+  - step-function-deploy
 
 - name: Installing-Dependencies
   jobs:
@@ -317,6 +325,7 @@ groups:
   - imputation-deploy
   - aggregation-deploy
   - disclosure-deploy
+  - step-function-deploy
 
 ##########################################################################################
 #####                            Installing Dependencies                             #####
