@@ -1139,6 +1139,7 @@ jobs:
 ##########################################################################################
 
   - name: ingest-deploy
+    serial_groups: [deploying-ingest]
     plan:
       - get: ingest-deploy-repository
         trigger: true
@@ -1193,6 +1194,7 @@ jobs:
 ##########################################################################################
 
   - name: enrichment-deploy
+    serial_groups: [deploying-enrichment]
     plan:
       - get: enrichment-deploy-repository
         trigger: true
@@ -1247,6 +1249,7 @@ jobs:
 ##########################################################################################
 
   - name: strata-deploy
+    serial_groups: [deploying-strata]
     plan:
       - get: strata-deploy-repository
         trigger: true
@@ -1301,6 +1304,7 @@ jobs:
 ##########################################################################################
 
   - name: imputation-deploy
+    serial_groups: [deploying-imputation]
     plan:
       - get: imputation-deploy-repository
         trigger: true
@@ -1355,6 +1359,7 @@ jobs:
 ##########################################################################################
 
   - name: aggregation-deploy
+    serial_groups: [deploying-aggregation]
     plan:
       - get: aggregation-deploy-repository
         trigger: true
@@ -1409,6 +1414,7 @@ jobs:
 ##########################################################################################
 
   - name: disclosure-deploy
+    serial_groups: [deploying-disclosure]
     plan:
       - get: disclosure-deploy-repository
         trigger: true
@@ -1457,3 +1463,31 @@ jobs:
             - name: json_outputs
           run:
             path: disclosure-deploy-repository/serverless.sh
+
+##########################################################################################
+#####                                 StepFunction                                   #####
+##########################################################################################
+  - name: step-function-deploy
+    serial_groups: [deploying-ingest, deploying-enrichment, deploying-strata,
+                    deploying-imputation, deploying-aggregation, deploying-disclosure]
+    plan:
+      - get: bmi-step-functions
+        trigger: true
+
+      - task: step-function-deploy
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              aws_access_key_id: ((ecr-svcaccount.api-key))
+              aws_secret_access_key: ((ecr-svcaccount.api-secret))
+          params:
+            AWS_ACCESS_KEY_ID: ((serverless-access-key.AWS_ACCESS_KEY_ID))
+            AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
+            SLS_DEBUG: 1
+          inputs:
+            - name: bmi-step-functions
+          run:
+            path: bmi-step-functions/serverless.sh
