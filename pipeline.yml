@@ -273,6 +273,48 @@ resources:
       branch: master
 
 ##########################################################################################
+#####                                Step Function                                   #####
+##########################################################################################
+
+  - name: ecr-image-step-function
+    type: docker-image
+    icon: docker
+    source:
+      repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+      tag: step-function
+      aws_access_key_id: ((ecr-svcaccount.api-key))
+      aws_secret_access_key: ((ecr-svcaccount.api-secret))
+
+  - name: step-function-requirements
+    type: pull-request
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      paths:
+        - dev-requirements.txt
+      repository: ONSdigital/es-bmi-step-functions
+      access_token: ((git_access_token))
+
+  - name: step-function-repository
+    type: pull-request
+    check_every: 24h
+    webhook_token: ((webhook_token-concourse))
+    icon: github-circle
+    source:
+      repository: ONSdigital/es-bmi-step-functions
+      access_token: ((git_access_token))
+
+  - name: step-function-deploy-repository
+    type: git
+    check_every: 24h
+    icon: github-circle
+    webhook_token: ((webhook_token-concourse))
+    source:
+      uri: https://github.com/ONSdigital/es-bmi-step-functions.git
+      branch: master
+
+##########################################################################################
 #####                                     Groups                                     #####
 ##########################################################################################
 
@@ -489,6 +531,33 @@ jobs:
           save: true
           cache: true
           cache_tag: disclosure   #Note, there needs to be the image in place before this will work.
+        get_params:
+          skip_download: true
+
+##########################################################################################
+#####                                 Step Function                                  #####
+##########################################################################################
+
+  - name: installing-dependencies-step-function
+    serial_groups: [rebuild-step-function]
+    plan:
+      - in_parallel:
+        - get: step-function-requirements
+          trigger: true
+
+        - get: step-function-repository
+
+        - get: base-python-image
+          params:
+            save: true
+
+      - put: ecr-image-step-function
+        params:
+          load_base: base-python-image
+          build: step-function-repository
+          save: true
+          cache: true
+          cache_tag: step-function   #Note, there needs to be the image in place before this will work.
         get_params:
           skip_download: true
 
@@ -1138,6 +1207,114 @@ jobs:
           put: disclosure-repository
           params:
             path: disclosure-repository
+            status: failure
+            description: Linting and tests have failed.
+
+##########################################################################################
+#####                                Step Function                                   #####
+##########################################################################################
+
+  - name: step-function-quality-checks
+    serial_groups: [rebuild-disclosure]
+    plan:
+
+      - get: step-function-repository
+        trigger: true
+        version: every
+
+      - put: step-function-repository
+        params:
+          path: step-function-repository
+          status: success
+
+      - try:
+          task: image-check
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: step-function
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  pwd
+          on_error:
+            do:
+              - in_parallel:
+                  - get: step-function-deploy-repository
+
+                  - get: base-python-image
+                    params:
+                      save: true
+
+              - put: ecr-image-step-function
+                params:
+                  load_base: base-python-image
+                  build: step-function-deploy-repository
+                get_params:
+                  skip_download: true
+
+      - in_parallel:
+        - task: aws-tests
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: step-function
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: step-function-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  cd step-function-repository
+                  PYTHONPATH=$(pwd) pytest
+          on_failure:
+            put: step-function-repository
+            params:
+              path: step-function-repository
+              status: failure
+              description: Failing tests are present
+
+        - task: flake8
+          config:
+            platform: linux
+            image_resource:
+              type: docker-image
+              source:
+                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+                tag: step-function
+                aws_access_key_id: ((ecr-svcaccount.api-key))
+                aws_secret_access_key: ((ecr-svcaccount.api-secret))
+            inputs:
+              - name: step-function-repository
+            run:
+              path: sh
+              args:
+                - -exc
+                - |
+                  flake8 $(pwd)/step-function-repository
+          on_failure:
+            put: step-function-repository
+            params:
+              path: step-function-repository
+              status: failure
+              description: Code standards are not met
+        on_failure:
+          put: step-function-repository
+          params:
+            path: step-function-repository
             status: failure
             description: Linting and tests have failed.
 
