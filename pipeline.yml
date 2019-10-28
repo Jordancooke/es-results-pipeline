@@ -13,13 +13,6 @@ resources:
       repository: python
       tag: 3.7-slim
 
-  - name: bmi-step-functions
-    type: git
-    icon: github-circle
-    webhook_token: ((webhook_token-concourse))
-    source:
-      uri: https://github.com/ONSdigital/es-bmi-step-functions.git
-
 ##########################################################################################
 #####                                   Ingest                                       #####
 ##########################################################################################
@@ -286,24 +279,15 @@ resources:
       aws_secret_access_key: ((ecr-svcaccount.api-secret))
 
   - name: step-function-requirements
-    type: pull-request
+    type: git
     check_every: 24h
     icon: github-circle
     webhook_token: ((webhook_token-concourse))
     source:
+      uri: https://github.com/ONSdigital/es-bmi-step-functions.git
+      branch: creating_step_function
       paths:
         - dev-requirements.txt
-      repository: ONSdigital/es-bmi-step-functions
-      access_token: ((git_access_token))
-
-  - name: step-function-repository
-    type: pull-request
-    check_every: 24h
-    webhook_token: ((webhook_token-concourse))
-    icon: github-circle
-    source:
-      repository: ONSdigital/es-bmi-step-functions
-      access_token: ((git_access_token))
 
   - name: step-function-deploy-repository
     type: git
@@ -312,7 +296,7 @@ resources:
     webhook_token: ((webhook_token-concourse))
     source:
       uri: https://github.com/ONSdigital/es-bmi-step-functions.git
-      branch: master
+      branch: creating_step_function
 
 ##########################################################################################
 #####                                     Groups                                     #####
@@ -327,6 +311,7 @@ groups:
   - installing-dependencies-imputation
   - installing-dependencies-aggregation
   - installing-dependencies-disclosure
+  - installing-dependencies-step-function
   - ingest-quality-checks
   - enrichment-quality-checks
   - strata-quality-checks
@@ -349,6 +334,7 @@ groups:
   - installing-dependencies-imputation
   - installing-dependencies-aggregation
   - installing-dependencies-disclosure
+  - installing-dependencies-step-function
 
 - name: Quality-Checks
   jobs:
@@ -545,7 +531,7 @@ jobs:
         - get: step-function-requirements
           trigger: true
 
-        - get: step-function-repository
+#        - get: step-function-deploy-repository
 
         - get: base-python-image
           params:
@@ -554,7 +540,7 @@ jobs:
       - put: ecr-image-step-function
         params:
           load_base: base-python-image
-          build: step-function-repository
+          build: step-function-requirements
           save: true
           cache: true
           cache_tag: step-function   #Note, there needs to be the image in place before this will work.
@@ -1546,10 +1532,11 @@ jobs:
 #####                                 StepFunction                                   #####
 ##########################################################################################
   - name: step-function-deploy
-    serial_groups: [deploying-ingest, deploying-enrichment, deploying-strata,
-                    deploying-imputation, deploying-aggregation, deploying-disclosure]
+    serial_groups: [rebuild-step-function,deploying-ingest, deploying-enrichment,
+                    deploying-strata, deploying-imputation, deploying-aggregation,
+                    deploying-disclosure]
     plan:
-      - get: bmi-step-functions
+      - get: step-function-deploy-repository
         trigger: true
 
       - task: step-function-deploy
@@ -1567,6 +1554,6 @@ jobs:
             AWS_SECRET_ACCESS_KEY: ((serverless-access-key.AWS_SECRET_ACCESS_KEY))
             SLS_DEBUG: 1
           inputs:
-            - name: bmi-step-functions
+            - name: step-function-deploy-repository
           run:
-            path: bmi-step-functions/serverless.sh
+            path: step-function-deploy-repository/serverless.sh
