@@ -1211,114 +1211,6 @@ jobs:
             description: Linting and tests have failed.
 
 ##########################################################################################
-#####                                Step Function                                   #####
-##########################################################################################
-
-  - name: step-function-quality-checks
-    serial_groups: [rebuild-disclosure]
-    plan:
-
-      - get: step-function-repository
-        trigger: true
-        version: every
-
-      - put: step-function-repository
-        params:
-          path: step-function-repository
-          status: success
-
-      - try:
-          task: image-check
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                tag: step-function
-                aws_access_key_id: ((ecr-svcaccount.api-key))
-                aws_secret_access_key: ((ecr-svcaccount.api-secret))
-            run:
-              path: sh
-              args:
-                - -exc
-                - |
-                  pwd
-          on_error:
-            do:
-              - in_parallel:
-                  - get: step-function-deploy-repository
-
-                  - get: base-python-image
-                    params:
-                      save: true
-
-              - put: ecr-image-step-function
-                params:
-                  load_base: base-python-image
-                  build: step-function-deploy-repository
-                get_params:
-                  skip_download: true
-
-      - in_parallel:
-        - task: aws-tests
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                tag: step-function
-                aws_access_key_id: ((ecr-svcaccount.api-key))
-                aws_secret_access_key: ((ecr-svcaccount.api-secret))
-            inputs:
-              - name: step-function-repository
-            run:
-              path: sh
-              args:
-                - -exc
-                - |
-                  cd step-function-repository
-                  PYTHONPATH=$(pwd) pytest
-          on_failure:
-            put: step-function-repository
-            params:
-              path: step-function-repository
-              status: failure
-              description: Failing tests are present
-
-        - task: flake8
-          config:
-            platform: linux
-            image_resource:
-              type: docker-image
-              source:
-                repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
-                tag: step-function
-                aws_access_key_id: ((ecr-svcaccount.api-key))
-                aws_secret_access_key: ((ecr-svcaccount.api-secret))
-            inputs:
-              - name: step-function-repository
-            run:
-              path: sh
-              args:
-                - -exc
-                - |
-                  flake8 $(pwd)/step-function-repository
-          on_failure:
-            put: step-function-repository
-            params:
-              path: step-function-repository
-              status: failure
-              description: Code standards are not met
-        on_failure:
-          put: step-function-repository
-          params:
-            path: step-function-repository
-            status: failure
-            description: Linting and tests have failed.
-
-##########################################################################################
 #####                                 Deployment                                     #####
 ##########################################################################################
 #####                                   Ingest                                       #####
@@ -1667,6 +1559,7 @@ jobs:
             type: docker-image
             source:
               repository: 014669633018.dkr.ecr.eu-west-2.amazonaws.com/results-cicd
+              tag: step-function
               aws_access_key_id: ((ecr-svcaccount.api-key))
               aws_secret_access_key: ((ecr-svcaccount.api-secret))
           params:
