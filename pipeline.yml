@@ -285,7 +285,7 @@ resources:
     webhook_token: ((webhook_token-concourse))
     source:
       uri: https://github.com/ONSdigital/es-bmi-step-functions.git
-      branch: creating_step_function
+      branch: master
       paths:
         - dev-requirements.txt
 
@@ -296,7 +296,7 @@ resources:
     webhook_token: ((webhook_token-concourse))
     source:
       uri: https://github.com/ONSdigital/es-bmi-step-functions.git
-      branch: creating_step_function
+      branch: master
 
 ##########################################################################################
 #####                                     Groups                                     #####
