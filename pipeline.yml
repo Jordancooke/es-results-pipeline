@@ -381,7 +381,7 @@ jobs:
           build: ingest-repository
           save: true
           cache: true
-          cache_tag: ingest   #Note, there needs to be the image in place before this will work.
+          cache_tag: ingest   
         get_params:
           skip_download: true
 
@@ -408,7 +408,7 @@ jobs:
           build: enrichment-repository
           save: true
           cache: true
-          cache_tag: enrichment   #Note, there needs to be the image in place before this will work.
+          cache_tag: enrichment   
         get_params:
           skip_download: true
 
@@ -435,7 +435,7 @@ jobs:
           build: strata-repository
           save: true
           cache: true
-          cache_tag: strata   #Note, there needs to be the image in place before this will work.
+          cache_tag: strata   
         get_params:
           skip_download: true
 
@@ -462,7 +462,7 @@ jobs:
           build: imputation-repository
           save: true
           cache: true
-          cache_tag: imputation   #Note, there needs to be the image in place before this will work.
+          cache_tag: imputation   
         get_params:
           skip_download: true
 
@@ -489,7 +489,7 @@ jobs:
           build: aggregation-repository
           save: true
           cache: true
-          cache_tag: aggregation   #Note, there needs to be the image in place before this will work.
+          cache_tag: aggregation   
         get_params:
           skip_download: true
 
@@ -516,7 +516,7 @@ jobs:
           build: disclosure-repository
           save: true
           cache: true
-          cache_tag: disclosure   #Note, there needs to be the image in place before this will work.
+          cache_tag: disclosure   
         get_params:
           skip_download: true
 
